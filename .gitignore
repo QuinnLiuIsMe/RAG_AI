@@ -18,6 +18,7 @@ frontend/ai-ops-ui/dist-ssr
 frontend/ai-ops-ui/*.local
 
 # AI Steering folder
+ai-steering/DEVELOPER_GUIDE.md
 ai-steering/.env
 ai-steering/**/__pycache__/
 ai-steering/**/*.pyc
