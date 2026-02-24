@@ -1,0 +1,40 @@
+# Backend (Python)
+backend/venv/
+backend/.env
+backend/__pycache__/
+backend/**/*.pyc
+
+# Frontend (Vite/Node)
+frontend/ai-ops-ui/logs
+frontend/ai-ops-ui/*.log
+frontend/ai-ops-ui/npm-debug.log*
+frontend/ai-ops-ui/yarn-debug.log*
+frontend/ai-ops-ui/yarn-error.log*
+frontend/ai-ops-ui/pnpm-debug.log*
+frontend/ai-ops-ui/lerna-debug.log*
+frontend/ai-ops-ui/node_modules
+frontend/ai-ops-ui/dist
+frontend/ai-ops-ui/dist-ssr
+frontend/ai-ops-ui/*.local
+
+# AI Steering folder
+ai-steering/.env
+ai-steering/**/__pycache__/
+ai-steering/**/*.pyc
+ai-steering/**/node_modules
+ai-steering/**/dist
+ai-steering/**/dist-ssr
+ai-steering/**/*.log
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS
+.DS_Store
