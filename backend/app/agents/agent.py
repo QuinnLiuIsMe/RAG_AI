@@ -4,10 +4,10 @@ from langchain_core.prompts import ChatPromptTemplate
 from app.tools.calculator import calculator
 from app.tools.metrics import compute_error_rate
 
-def build_agent():
+def build_agent(model: str, temperature: float):
     llm = ChatTongyi(
-        model="qwen-max",
-        temperature=0
+        model=model,
+        temperature=temperature
     )
 
     tools = [calculator, compute_error_rate]
