@@ -1,14 +1,35 @@
+import hashlib
+
+from app.core.config import Settings
+from app.core.guardrails import enforce_input_guardrails, sanitize_output
+from app.core.observability import ObservabilityTracker
 from app.schemas.chat import Citation
 from app.schemas.incident import RecommendRemediationRequest, SummarizeIncidentRequest
+from app.services.cache_service import InMemoryTTLCache
 from app.services.rag_service import LocalRAGService
 from app.tools.metrics import calculate_error_rate, classify_incident_impact
 
 
 class IncidentService:
-    def __init__(self, rag_service: LocalRAGService):
+    def __init__(
+        self,
+        rag_service: LocalRAGService,
+        cache: InMemoryTTLCache,
+        tracker: ObservabilityTracker,
+        settings: Settings,
+    ):
         self.rag_service = rag_service
+        self.cache = cache
+        self.tracker = tracker
+        self.settings = settings
 
     def summarize_incident(self, req: SummarizeIncidentRequest) -> tuple[str, list[Citation], float]:
+        enforce_input_guardrails(req.incident, self.settings)
+        cache_key = self._cache_key("sum", req.incident)
+        cached = self.cache.get(cache_key)
+        if cached is not None:
+            return cached["answer"], cached["citations"], cached["confidence"]
+
         citations, confidence = self._citations(req.incident)
         error_rate = None
         impact = "unknown"
@@ -24,11 +45,22 @@ class IncidentService:
         details.append(f"Impact level: {impact}")
         details.append("Evidence is grounded in the cited runbooks/postmortems.")
 
-        return "\n".join(details), citations, confidence
+        answer = sanitize_output("\n".join(details))
+        result = {"answer": answer, "citations": citations, "confidence": confidence}
+        self.cache.set(cache_key, result, ttl_seconds=self.settings.cache_ttl_seconds)
+
+        self.tracker.observe_llm_usage(max(1, len(req.incident) // 4), max(1, len(answer) // 4), 0.0)
+        return answer, citations, confidence
 
     def recommend_remediation(
         self, req: RecommendRemediationRequest
     ) -> tuple[str, list[Citation], float]:
+        enforce_input_guardrails(req.incident, self.settings)
+        cache_key = self._cache_key("rec", req.incident + (req.service_name or ""))
+        cached = self.cache.get(cache_key)
+        if cached is not None:
+            return cached["answer"], cached["citations"], cached["confidence"]
+
         text = req.incident.lower()
         actions: list[str] = []
 
@@ -46,8 +78,11 @@ class IncidentService:
             actions.append("Document root cause and add preventive alerting.")
 
         prefix = f"Recommended remediation for {req.service_name}: " if req.service_name else "Recommended remediation: "
-        answer = prefix + " ".join(actions[:4])
+        answer = sanitize_output(prefix + " ".join(actions[:4]))
         citations, confidence = self._citations(req.incident)
+        result = {"answer": answer, "citations": citations, "confidence": confidence}
+        self.cache.set(cache_key, result, ttl_seconds=self.settings.cache_ttl_seconds)
+        self.tracker.observe_llm_usage(max(1, len(req.incident) // 4), max(1, len(answer) // 4), 0.0)
         return answer, citations, confidence
 
     def _citations(self, text: str) -> tuple[list[Citation], float]:
@@ -63,3 +98,7 @@ class IncidentService:
         ]
         confidence = round(max((item.score for item in retrieved), default=0.0), 4)
         return citations, confidence
+
+    @staticmethod
+    def _cache_key(prefix: str, payload: str) -> str:
+        return f"{prefix}:{hashlib.sha256(payload.encode('utf-8')).hexdigest()}"

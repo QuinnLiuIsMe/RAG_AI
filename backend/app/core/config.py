@@ -15,6 +15,20 @@ class Settings(BaseSettings):
     llm_temperature: float = 0.0
     dashscope_api_key: str | None = None
 
+    auth_enabled: bool = False
+    auth_issuer: str | None = None
+    auth_audience: str | None = None
+    auth_verify_signature: bool = False
+    auth_hs256_secret: str | None = None
+
+    rate_limit_per_minute: int = 60
+
+    guardrail_max_input_chars: int = 6000
+    guardrail_blocked_phrases: str = "<script>,drop table,ignore previous instructions,begin rsa private key"
+
+    cache_backend: Literal["memory", "redis"] = "memory"
+    cache_ttl_seconds: int = 300
+
     model_config = SettingsConfigDict(
         env_prefix="APP_",
         env_file=".env",

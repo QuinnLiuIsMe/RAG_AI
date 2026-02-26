@@ -1,9 +1,18 @@
+import base64
+import json
 import unittest
 
 from fastapi.testclient import TestClient
 
 from app.core.config import Settings
 from app.main import create_app
+
+
+def _encode_token(payload: dict) -> str:
+    header = {"alg": "HS256", "typ": "JWT"}
+    header_raw = base64.urlsafe_b64encode(json.dumps(header).encode("utf-8")).decode("utf-8").rstrip("=")
+    payload_raw = base64.urlsafe_b64encode(json.dumps(payload).encode("utf-8")).decode("utf-8").rstrip("=")
+    return f"{header_raw}.{payload_raw}."
 
 
 class ApiTests(unittest.TestCase):
@@ -59,6 +68,43 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("x-request-id", response.headers)
         self.assertTrue(response.headers["x-request-id"])
+
+    def test_metrics_endpoint(self) -> None:
+        self.client.get("/health")
+        response = self.client.get("/metrics")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("http_requests_total", response.text)
+
+    def test_auth_enabled_requires_bearer_token(self) -> None:
+        settings = Settings(app_env="test", llm_provider="mock", auth_enabled=True)
+        client = TestClient(create_app(settings))
+        response = client.post("/ask", json={"question": "hello"})
+        self.assertEqual(response.status_code, 401)
+
+    def test_auth_enabled_accepts_valid_token(self) -> None:
+        settings = Settings(app_env="test", llm_provider="mock", auth_enabled=True)
+        client = TestClient(create_app(settings))
+        token = _encode_token({"sub": "user-123"})
+        response = client.post(
+            "/ask",
+            json={"question": "hello"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        self.assertEqual(response.status_code, 200)
+
+    def test_rate_limit_blocks_when_exceeded(self) -> None:
+        settings = Settings(app_env="test", llm_provider="mock", rate_limit_per_minute=1)
+        client = TestClient(create_app(settings))
+        first = client.post("/ask", json={"question": "one"})
+        second = client.post("/ask", json={"question": "two"})
+        self.assertEqual(first.status_code, 200)
+        self.assertEqual(second.status_code, 429)
+
+    def test_guardrail_blocks_malicious_phrase(self) -> None:
+        settings = Settings(app_env="test", llm_provider="mock")
+        client = TestClient(create_app(settings))
+        response = client.post("/ask", json={"question": "please DROP TABLE users;"})
+        self.assertEqual(response.status_code, 400)
 
 
 if __name__ == "__main__":
