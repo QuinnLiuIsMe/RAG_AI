@@ -1,16 +1,20 @@
 import logging
 import time
+from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 
 from app.api.routes.chat import router as chat_router
 from app.api.routes.health import router as health_router
+from app.api.routes.incident import router as incident_router
 from app.core.config import Settings, get_settings
 from app.core.logging import setup_logging
 from app.core.request_context import new_request_id, request_id_ctx_var
 from app.providers.factory import get_provider
 from app.services.ask_service import AskService
+from app.services.incident_service import IncidentService
+from app.services.rag_service import LocalRAGService
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +29,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
 
     app.state.settings = app_settings
-    app.state.ask_service = AskService(get_provider(app_settings))
+    knowledge_dir = Path(__file__).resolve().parents[1] / "data" / "knowledge_base"
+    rag_service = LocalRAGService(knowledge_dir=knowledge_dir)
+    rag_service.refresh_index()
+    app.state.rag_service = rag_service
+    app.state.ask_service = AskService(get_provider(app_settings), rag_service)
+    app.state.incident_service = IncidentService(rag_service)
 
     @app.middleware("http")
     async def request_context_middleware(request: Request, call_next):
@@ -64,6 +73,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             request_id_ctx_var.reset(token)
 
     app.include_router(chat_router)
+    app.include_router(incident_router)
     app.include_router(health_router)
 
     @app.get("/", response_class=HTMLResponse, tags=["meta"])

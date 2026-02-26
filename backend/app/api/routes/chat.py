@@ -9,5 +9,5 @@ router = APIRouter(tags=["chat"])
 
 @router.post("/ask", response_model=QueryResponse)
 async def ask(req: QueryRequest, service: AskService = Depends(get_ask_service)) -> QueryResponse:
-    answer = service.ask(req.question)
-    return QueryResponse(answer=answer)
+    answer, citations, confidence = service.ask_with_context(req.question)
+    return QueryResponse(answer=answer, citations=citations, confidence=confidence)
