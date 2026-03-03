@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import "./Chat.css";
 
 export default function Chat() {
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -22,7 +23,7 @@ export default function Chat() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/ask", {
+      const response = await fetch(`${apiBaseUrl}/ask`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

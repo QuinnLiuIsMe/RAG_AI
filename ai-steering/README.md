@@ -42,6 +42,11 @@ ai-steering/                   # plan and developer docs
   - Input/output guardrails
   - Prometheus-style metrics
   - In-memory TTL caching for repeated requests
+- Week 4 deployment + packaging baseline:
+  - Backend Dockerfile
+  - TypeScript CDK IaC for ECS Fargate + ALB + API Gateway + CloudWatch
+  - GitHub Actions CI/CD workflow (test, build/push, deploy trigger)
+  - Portfolio README + demo script
 
 ## Quick Start
 
@@ -92,3 +97,4 @@ Implementation roadmap is in:
 
 - `ai-steering/plan.txt`
 - `ai-steering/DEVELOPER_GUIDE.md`
+- `ai-steering/demo_script_week4.md`
