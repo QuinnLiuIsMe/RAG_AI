@@ -1,6 +1,7 @@
 import * as cdk from 'aws-cdk-lib';
 import { Stack, StackProps } from 'aws-cdk-lib';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
+import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as ecs_patterns from 'aws-cdk-lib/aws-ecs-patterns';
 import * as logs from 'aws-cdk-lib/aws-logs';
@@ -10,7 +11,7 @@ export interface ComputeStackProps extends StackProps {
   projectName: string;
   vpc: ec2.IVpc;
   privateSubnets: ec2.ISubnet[];
-  ecrRepositoryName: string;
+  ecrRepository: ecr.IRepository;
   imageTag: string;
   desiredCount: number;
   containerPort: number;
@@ -40,8 +41,6 @@ export class ComputeStack extends Stack {
       containerInsights: true,
     });
 
-    const imageUri = `${Stack.of(this).account}.dkr.ecr.${Stack.of(this).region}.amazonaws.com/${props.ecrRepositoryName}:${props.imageTag}`;
-
     const pattern = new ecs_patterns.ApplicationLoadBalancedFargateService(this, 'Service', {
       cluster: this.cluster,
       serviceName: `${props.projectName}-service`,
@@ -53,7 +52,7 @@ export class ComputeStack extends Stack {
       loadBalancerName: `${props.projectName}-alb`,
       taskImageOptions: {
         containerName: 'backend',
-        image: ecs.ContainerImage.fromRegistry(imageUri),
+        image: ecs.ContainerImage.fromEcrRepository(props.ecrRepository, props.imageTag),
         containerPort: props.containerPort,
         logDriver: ecs.LogDrivers.awsLogs({
           streamPrefix: 'ecs',

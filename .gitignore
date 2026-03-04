@@ -17,6 +17,11 @@ frontend/ai-ops-ui/dist
 frontend/ai-ops-ui/dist-ssr
 frontend/ai-ops-ui/*.local
 
+# Infra (CDK/Node)
+infra/cdk/node_modules/
+infra/cdk/cdk.out/
+infra/cdk/dist/
+
 # AI Steering folder
 ai-steering/DEVELOPER_GUIDE.md
 ai-steering/plan.txt

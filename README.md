@@ -18,7 +18,7 @@ flowchart LR
   G --> A[Application Load Balancer]
   A --> E[ECS Fargate Service\nFastAPI Backend]
   E --> R[Local RAG Service\nKnowledge Base Chunks]
-  E --> M[/metrics endpoint]
+  E --> M[metrics endpoint]
   E --> C[CloudWatch Logs]
   A --> D[CloudWatch Dashboard + Alarms]
 ```

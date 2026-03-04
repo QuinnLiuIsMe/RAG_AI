@@ -2,6 +2,7 @@
 import * as cdk from 'aws-cdk-lib';
 import { readInfraContext } from '../lib/context';
 import { ComputeStack } from '../lib/compute-stack';
+import { EcrStack } from '../lib/ecr-stack';
 import { EdgeStack } from '../lib/edge-stack';
 import { MonitoringStack } from '../lib/monitoring-stack';
 import { NetworkStack } from '../lib/network-stack';
@@ -15,9 +16,18 @@ const env = {
 
 const networkStack = new NetworkStack(app, 'AiOpsNetworkStack', {
   env,
+  useExistingVpc: context.useExistingVpc,
   vpcId: context.vpcId,
   publicSubnetIds: context.publicSubnetIds,
   privateSubnetIds: context.privateSubnetIds,
+  maxAzs: context.networkMaxAzs,
+  natGateways: context.networkNatGateways,
+});
+
+const ecrStack = new EcrStack(app, 'AiOpsEcrStack', {
+  env,
+  projectName: context.projectName,
+  repositoryName: context.ecrRepositoryName,
 });
 
 const computeStack = new ComputeStack(app, 'AiOpsComputeStack', {
@@ -25,7 +35,7 @@ const computeStack = new ComputeStack(app, 'AiOpsComputeStack', {
   projectName: context.projectName,
   vpc: networkStack.vpc,
   privateSubnets: networkStack.privateSubnets,
-  ecrRepositoryName: context.ecrRepositoryName,
+  ecrRepository: ecrStack.repository,
   imageTag: context.imageTag,
   desiredCount: context.desiredCount,
   containerPort: context.containerPort,
