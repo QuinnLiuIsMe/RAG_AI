@@ -1,7 +1,7 @@
 # AI Ops Incident Copilot (RAG)
 
 This repository contains a FastAPI backend and React frontend for an AI Ops copilot.
-Current status includes Week 1 (production API foundation), Week 2 (local RAG + incident workflows), and Week 3 baseline hardening.
+Current status includes Week 1 (production API foundation), Week 2 (local RAG + incident workflows), Week 3 (baseline hardening), and Week 4 (deployment + packaging).
 
 ## Project Layout
 
@@ -18,6 +18,7 @@ backend/
   data/knowledge_base/         # local runbooks/postmortems for retrieval
   tests/
 frontend/ai-ops-ui/            # React + Vite chat UI
+infra/cdk/                     # AWS CDK IaC (network, ecr, ecs/alb, api gateway, monitoring)
 ai-steering/                   # plan and developer docs
 ```
 
@@ -90,6 +91,12 @@ Run backend tests from repo root:
 ```bash
 PYTHONPATH=backend backend/venv/bin/python -m unittest discover -s backend/tests -p "test_*.py"
 ```
+
+## Deployment / IaC
+
+- AWS infrastructure code is in `infra/cdk/` (TypeScript CDK app).
+- Deployment usage and context variables: `infra/cdk/README.md`.
+- CI/CD workflow that tests/builds/deploys: `.github/workflows/backend-ci-cd.yml`.
 
 ## Plan Reference
 

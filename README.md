@@ -149,6 +149,3 @@ Required GitHub secrets:
 - `PRIVATE_SUBNET_IDS`
 - `ALARM_EMAIL` (optional)
 
-## Demo Script
-
-See `ai-steering/demo_script_week4.md` for a 3-5 minute interview/demo flow.
